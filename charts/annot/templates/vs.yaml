@@ -1,0 +1,37 @@
+{{- range $index := (untilStep 0 (int .Values.annotCount) 1) }}
+  {{- $annot := printf "00%v" $index | trunc -2 }}
+apiVersion: gateway.solo.io/v1
+kind: VirtualService
+metadata:
+  name: annot{{ $annot }}-vs
+  namespace: gloo-system
+  labels:
+    routeVersion: "1.2"
+spec:
+  displayName: annot{{ $annot }}-vs
+  sslConfig:
+    oneWayTls: true
+    secretRef:
+      name: annot{{ $annot }}.textkernel.nl-tls
+      namespace: gloo-system
+    sniDomains:
+    - annot{{ $annot }}.textkernel.nl
+  virtualHost:
+    domains:
+    - annot{{ $annot }}.textkernel.nl
+    routes:
+    - delegateAction:
+        selector:
+          labels:
+            domain: annot{{ $annot }}.textkernel.nl
+          namespaces:
+          - gloo-crd
+      matchers:
+      - prefix: /
+    options:
+      headerManipulation:
+        responseHeadersToRemove:
+        - x-envoy-upstream-service-time
+---
+{{- end }}
+
